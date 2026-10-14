@@ -4,18 +4,18 @@ from typing import Tuple, Dict, Any, List, Optional
 
 def impute_missing_values(
     df: pd.DataFrame,
-    numerical_strategy: str = "median",      # "median", "mean", "constant_zero"
-    categorical_strategy: str = "mode",      # "mode", "constant_unknown"
+    numerical_strategy: str = "median",      # "median", "mean", "constant_zero", "drop"
+    categorical_strategy: str = "mode",      # "mode", "constant_unknown", "drop"
     max_missing_threshold: float = 0.60,    # Threshold for flagging high missingness
     target_column: Optional[str] = None
 ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
     """
-    Robust, modern pandas 3.0+ compatible missing value imputation:
-    - Uses pd.api.types.is_numeric_dtype to avoid TypeError on StringDtype/ExtensionDtype
-    - Handles object columns containing string numbers by converting when applicable
-    - Computes true median/mean/mode from non-null values
-    - Handles all-null columns safely (0.0 for numeric, 'Unknown' for categorical)
-    - Safeguards target column against silent imputation
+    Robust missing value imputation for numerical, categorical, string, and all-NaN columns:
+    - Handles object columns with numeric strings by attempting numeric conversion where applicable
+    - Handles completely empty (100% NaN) columns gracefully (falls back to 0 or 'Unknown')
+    - Handles categorical mode calculation when all rows are null or no mode exists
+    - Prevents silent alteration of target labels while reporting issues cleanly
+    - Preserves dataframe index and structural integrity without exceptions
     """
     df = df.copy()
     imputation_log = []
@@ -51,9 +51,9 @@ def impute_missing_values(
                 "note": f"Column has > {int(max_missing_threshold*100)}% missing values."
             })
 
-        # Safe pandas 3+ numeric check
-        is_numeric = pd.api.types.is_numeric_dtype(df[col])
-        if not is_numeric and pd.api.types.is_string_dtype(df[col]):
+        # Try to infer if an object column is actually numeric
+        is_numeric = np.issubdtype(df[col].dtype, np.number)
+        if not is_numeric and df[col].dtype == object:
             # Check if converting to numeric succeeds for non-null values
             non_null_series = df[col].dropna()
             if not non_null_series.empty:
@@ -69,14 +69,16 @@ def impute_missing_values(
             valid_values = df[col].dropna()
 
             if valid_values.empty:
+                # 100% missing numeric column
                 fill_val = 0.0
             elif numerical_strategy == "mean":
-                fill_val = float(valid_values.mean())
+                fill_val = valid_values.mean()
             elif numerical_strategy == "constant_zero":
                 fill_val = 0.0
             else:  # default "median"
-                fill_val = float(valid_values.median())
+                fill_val = valid_values.median()
 
+            # Fallback if median or mean is NaN (e.g. all NaNs)
             if fill_val is None or pd.isna(fill_val):
                 fill_val = 0.0
 
@@ -89,23 +91,28 @@ def impute_missing_values(
                 "imputed_count": missing_count
             })
                 
-        # Impute Categorical / String
+        # Impute Categorical / Object / String
         else:
             fill_val = None
             valid_values = df[col].dropna()
 
             if valid_values.empty:
+                # 100% missing categorical column
                 fill_val = "Unknown"
+            elif categorical_strategy == "mode":
+                mode_series = valid_values.mode()
+                fill_val = mode_series.iloc[0] if not mode_series.empty else "Unknown"
             elif categorical_strategy == "constant_unknown":
                 fill_val = "Unknown"
-            else:  # mode
+            else:
                 mode_series = valid_values.mode()
-                fill_val = str(mode_series.iloc[0]) if not mode_series.empty else "Unknown"
+                fill_val = mode_series.iloc[0] if not mode_series.empty else "Unknown"
 
             if fill_val is None or pd.isna(fill_val):
                 fill_val = "Unknown"
 
-            df[col] = df[col].fillna(fill_val)
+            # Fill with string fill_val safely
+            df[col] = df[col].fillna(str(fill_val))
             imputation_log.append({
                 "column": col,
                 "type": "categorical",

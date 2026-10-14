@@ -36,13 +36,8 @@ def train_baseline_model(
     X = df_clean.drop(columns=[target_column])
     y = df_clean[target_column]
 
-    # Drop obvious identifier columns (like Customer_ID, ID, etc.) that introduce noise
-    id_like_cols = [c for c in X.columns if "id" in c.lower() or X[c].nunique() >= 0.95 * len(X)]
-    if id_like_cols and len(X.columns) > len(id_like_cols):
-        X = X.drop(columns=id_like_cols)
-
     num_features = list(X.select_dtypes(include=[np.number]).columns)
-    cat_features = list(X.select_dtypes(include=["object", "string", "category"]).columns)
+    cat_features = list(X.select_dtypes(include=["object", "category"]).columns)
 
     if not num_features and not cat_features:
         return {"error": "No valid predictor features available for model training."}

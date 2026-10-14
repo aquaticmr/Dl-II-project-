@@ -186,8 +186,8 @@ elif nav_choice == "3. Preprocessing Config":
         with col_c2:
             st.markdown("### ⚙️ Feature Engineer Settings")
             treat_out = st.selectbox("Outlier treatment method", ["cap", "none"], index=0)
-            enc_cat = st.selectbox("Categorical encoding", ["none", "onehot", "label"], index=0)
-            scale_num = st.selectbox("Numerical scaling", ["none", "standard", "minmax"], index=0)
+            enc_cat = st.selectbox("Categorical encoding", ["onehot", "label", "none"], index=0)
+            scale_num = st.selectbox("Numerical scaling", ["standard", "minmax", "none"], index=0)
 
             st.markdown("### 🎯 Machine Learning Target (Optional)")
             target_col = st.selectbox("Designate Target Column (Optional)", ["None"] + cols, index=cols.index("Purchased") + 1 if "Purchased" in cols else 0)
@@ -225,8 +225,8 @@ elif nav_choice == "4. Multi-Agent Execution":
             "categorical_imputation": "mode",
             "max_missing_threshold": 0.60,
             "treat_outliers": "cap",
-            "encode_categorical": "none",
-            "scale_numerical": "none",
+            "encode_categorical": "onehot",
+            "scale_numerical": "standard",
             "target_column": "Purchased" if "Purchased" in st.session_state.raw_df.columns else None
         })
 
@@ -302,14 +302,8 @@ elif nav_choice == "6. Baseline ML Training":
     if st.session_state.raw_df is None:
         st.warning("Please upload or load a dataset first in Step 2.")
     else:
-        # Choose data source for evaluation
-        data_source = "Cleaned Processed Dataset" if (st.session_state.workflow_state and st.session_state.workflow_state.final_df is not None) else "Raw Uploaded Dataset"
-        dataset_options = ["Raw Uploaded Dataset"]
-        if st.session_state.workflow_state and st.session_state.workflow_state.final_df is not None:
-            dataset_options.append("Cleaned Processed Dataset")
-            dataset_options.append("Side-by-Side Comparison (Raw vs Cleaned)")
-
-        source_choice = st.radio("Dataset to Evaluate", dataset_options, index=len(dataset_options) - 1 if len(dataset_options) > 1 else 0, horizontal=True)
+        df = st.session_state.raw_df
+        cols = list(df.columns)
 
         col1, col2 = st.columns(2)
         with col1:
@@ -319,43 +313,15 @@ elif nav_choice == "6. Baseline ML Training":
             algo = st.selectbox("Algorithm", ["logistic_regression", "decision_tree"] if task_type == "classification" else ["linear_regression", "decision_tree"])
             test_split = st.slider("Held-out Test Split", 0.1, 0.4, 0.25, 0.05)
 
-        if st.button("🏋️ Train & Evaluate Model", type="primary"):
+        if st.button("🏋️ Train Baseline Model", type="primary"):
             with st.spinner("Fitting leakage-safe Scikit-Learn Pipeline..."):
-                if source_choice == "Side-by-Side Comparison (Raw vs Cleaned)":
-                    raw_res = train_baseline_model(st.session_state.raw_df, target_col, task_type, algo, test_split)
-                    clean_res = train_baseline_model(st.session_state.workflow_state.final_df, target_col, task_type, algo, test_split)
-
-                    if "error" in raw_res or "error" in clean_res:
-                        st.error(f"Evaluation error: {raw_res.get('error') or clean_res.get('error')}")
-                    else:
-                        st.success("✅ Comparative Evaluation Completed!")
-                        cmp1, cmp2 = st.columns(2)
-                        with cmp1:
-                            st.markdown("#### 🔴 Raw Dataset Performance")
-                            if task_type == "classification":
-                                st.metric("Raw Accuracy", f"{raw_res['metrics']['accuracy']*100:.2f}%")
-                                st.metric("Raw F1-Score", f"{raw_res['metrics']['f1_score']:.3f}")
-                            else:
-                                st.metric("Raw RMSE", f"{raw_res['metrics']['rmse']:.3f}")
-                        with cmp2:
-                            st.markdown("#### 🟢 Cleaned Dataset Performance")
-                            if task_type == "classification":
-                                delta_acc = round((clean_res['metrics']['accuracy'] - raw_res['metrics']['accuracy']) * 100, 2)
-                                st.metric("Cleaned Accuracy", f"{clean_res['metrics']['accuracy']*100:.2f}%", delta=f"{delta_acc}%")
-                                delta_f1 = round(clean_res['metrics']['f1_score'] - raw_res['metrics']['f1_score'], 3)
-                                st.metric("Cleaned F1-Score", f"{clean_res['metrics']['f1_score']:.3f}", delta=delta_f1)
-                            else:
-                                delta_rmse = round(clean_res['metrics']['rmse'] - raw_res['metrics']['rmse'], 3)
-                                st.metric("Cleaned RMSE", f"{clean_res['metrics']['rmse']:.3f}", delta=-delta_rmse)
-                else:
-                    eval_df = st.session_state.workflow_state.final_df if (source_choice == "Cleaned Processed Dataset" and st.session_state.workflow_state) else st.session_state.raw_df
-                    ml_res = train_baseline_model(
-                        df=eval_df,
-                        target_column=target_col,
-                        model_type=task_type,
-                        algorithm=algo,
-                        test_size=test_split
-                    )
+                ml_res = train_baseline_model(
+                    df=df,
+                    target_column=target_col,
+                    model_type=task_type,
+                    algorithm=algo,
+                    test_size=test_split
+                )
 
                 if "error" in ml_res:
                     st.error(f"Training failed: {ml_res['error']}")

@@ -59,7 +59,7 @@ def encode_categorical_features(
     if encoding_type == "none":
         return df, {"operation": "encode_categorical", "type": "none", "encoded_columns": []}
 
-    cat_cols = [c for c in df.select_dtypes(include=["object", "string", "category"]).columns if c != target_column]
+    cat_cols = [c for c in df.select_dtypes(include=["object", "category"]).columns if c != target_column]
     encoded_info = []
     
     for col in cat_cols:

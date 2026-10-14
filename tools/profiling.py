@@ -39,7 +39,7 @@ def profile_dataset(df: pd.DataFrame) -> Dict[str, Any]:
     
     # Classify columns
     num_cols = list(df.select_dtypes(include=[np.number]).columns)
-    cat_cols = list(df.select_dtypes(include=["object", "string", "category"]).columns)
+    cat_cols = list(df.select_dtypes(include=["object", "category"]).columns)
     dt_cols = list(df.select_dtypes(include=["datetime", "datetimetz"]).columns)
     
     # Missing values

@@ -51,7 +51,7 @@ def normalize_strings_and_categories(
     df = df.copy()
     affected_cols = {}
     
-    cat_cols = list(df.select_dtypes(include=["object", "string", "category"]).columns)
+    cat_cols = list(df.select_dtypes(include=["object", "category"]).columns)
     for col in cat_cols:
         orig = df[col].copy()
         
