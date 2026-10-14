@@ -1,0 +1,26 @@
+Customer_ID,Age,Gender,Annual_Income,Education_Level,Credit_Score,Purchased
+CUST_001,25.0,Male,45000.0,Bachelor,710.0,Yes
+CUST_002,34.0,Female,68000.0,Master,680.0,No
+CUST_003,,female,52000.0,bachelor,590.0,Yes
+CUST_004,45.0, MALE ,89000.0,PhD,750.0,Yes
+CUST_005,29.0,Female,,High School,620.0,No
+CUST_006,52.0,male,110000.0,Master,810.0,Yes
+CUST_007,19.0,FEMALE,32000.0,Bachelor,560.0,No
+CUST_008,41.0,Male,74000.0,master,730.0,Yes
+CUST_009,,,61000.0,,,No
+CUST_010,38.0,female,58000.0,Bachelor,640.0,No
+CUST_003,,female,52000.0,bachelor,590.0,Yes
+CUST_011,61.0,Male,95000.0,PhD,790.0,Yes
+CUST_012,23.0, Female ,41000.0,High School,600.0,No
+CUST_013,145.0,Male,550000.0,Master,720.0,Yes
+CUST_014,31.0,male,49000.0,Bachelor,670.0,No
+CUST_015,28.0,,,Bachelor,630.0,No
+CUST_016,,Male,67000.0,Master,705.0,Yes
+CUST_017,50.0,Female,82000.0,PhD,780.0,Yes
+CUST_018,36.0,male,53000.0,High School,595.0,No
+CUST_019,42.0,Female,71000.0,Bachelor,715.0,Yes
+CUST_020,27.0,Male,46000.0,Master,640.0,No
+CUST_021,33.0,female,64000.0,Bachelor,690.0,No
+CUST_022,48.0,Male,88000.0,High School,760.0,Yes
+CUST_023,,Female,39000.0,Master,580.0,No
+CUST_024,30.0,male,51000.0,Bachelor,665.0,Yes
