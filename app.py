@@ -6,7 +6,6 @@ import streamlit as st
 from orchestrator.workflow import WorkflowOrchestrator
 from tools.profiling import profile_dataset
 from tools.reporting import export_report_to_json
-from ml.model_training import train_baseline_model
 from sample_data.generate_sample import generate_sample_dataset
 from ui.components import apply_custom_styles, render_agent_status_card
 from ui.charts import create_score_gauge, create_missing_chart, create_comparison_chart
@@ -45,8 +44,7 @@ nav_choice = st.sidebar.radio(
         "3. Preprocessing Config",
         "4. Multi-Agent Execution",
         "5. Results & Audit Log",
-        "6. Baseline ML Training",
-        "7. Export & Download"
+        "6. Export & Download"
     ]
 )
 
@@ -294,61 +292,8 @@ elif nav_choice == "5. Results & Audit Log":
             })
         st.dataframe(pd.DataFrame(audit_records), use_container_width=True)
 
-# ---------------- PAGE 6: BASELINE ML TRAINING ----------------
-elif nav_choice == "6. Baseline ML Training":
-    st.markdown('<div class="main-header">Baseline Machine Learning Evaluation</div>', unsafe_allow_html=True)
-    st.markdown('<div class="sub-header">Demonstrate model performance with strict, leakage-safe train/test pipelines.</div>', unsafe_allow_html=True)
-
-    if st.session_state.raw_df is None:
-        st.warning("Please upload or load a dataset first in Step 2.")
-    else:
-        df = st.session_state.raw_df
-        cols = list(df.columns)
-
-        col1, col2 = st.columns(2)
-        with col1:
-            target_col = st.selectbox("Select Target Variable (y)", cols, index=cols.index("Purchased") if "Purchased" in cols else 0)
-            task_type = st.radio("Task Type", ["classification", "regression"])
-        with col2:
-            algo = st.selectbox("Algorithm", ["logistic_regression", "decision_tree"] if task_type == "classification" else ["linear_regression", "decision_tree"])
-            test_split = st.slider("Held-out Test Split", 0.1, 0.4, 0.25, 0.05)
-
-        if st.button("🏋️ Train Baseline Model", type="primary"):
-            with st.spinner("Fitting leakage-safe Scikit-Learn Pipeline..."):
-                ml_res = train_baseline_model(
-                    df=df,
-                    target_column=target_col,
-                    model_type=task_type,
-                    algorithm=algo,
-                    test_size=test_split
-                )
-
-                if "error" in ml_res:
-                    st.error(f"Training failed: {ml_res['error']}")
-                else:
-                    st.success("✅ Baseline Model Trained Successfully!")
-                    st.markdown(f"**Split Summary:** Train set: {ml_res['train_size']} rows | Test set: {ml_res['test_size']} rows")
-                    
-                    st.markdown("### Evaluation Metrics on Held-out Test Set")
-                    met = ml_res["metrics"]
-                    if task_type == "classification":
-                        m1, m2, m3, m4 = st.columns(4)
-                        m1.metric("Accuracy", f"{met['accuracy']*100:.2f}%")
-                        m2.metric("Precision", f"{met['precision']:.3f}")
-                        m3.metric("Recall", f"{met['recall']:.3f}")
-                        m4.metric("F1 Score", f"{met['f1_score']:.3f}")
-                        
-                        st.markdown("#### Confusion Matrix")
-                        cm_df = pd.DataFrame(ml_res["confusion_matrix"], index=ml_res["classes"], columns=ml_res["classes"])
-                        st.dataframe(cm_df)
-                    else:
-                        m1, m2, m3 = st.columns(3)
-                        m1.metric("MAE", f"{met['mae']:.3f}")
-                        m2.metric("RMSE", f"{met['rmse']:.3f}")
-                        m3.metric("R² Score", f"{met['r2_score']:.3f}")
-
-# ---------------- PAGE 7: EXPORT & DOWNLOAD ----------------
-elif nav_choice == "7. Export & Download":
+# ---------------- PAGE 6: EXPORT & DOWNLOAD ----------------
+elif nav_choice == "6. Export & Download":
     st.markdown('<div class="main-header">Export & Audit Reports</div>', unsafe_allow_html=True)
     st.markdown('<div class="sub-header">Download the machine-learning-ready dataset and complete JSON audit report.</div>', unsafe_allow_html=True)
 
